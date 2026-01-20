@@ -2,21 +2,36 @@
 
 AI automation risk service for occupations/tasks/skills using O*NET and BLS data.
 
+## macOS setup (Homebrew)
+
+Commands
+- `brew install postgresql@18`
+- `brew services start postgresql@18`
+- `export PATH="/opt/homebrew/opt/postgresql@18/bin:$PATH"`  # or add to ~/.zshrc
+- `createuser -P task_risk`
+- `createdb -O task_risk task_risk`
+
+Notes
+- If `psql` is not found, use `/opt/homebrew/opt/postgresql@18/bin/psql`.
+
+---
+
 ## Local quick start (no Docker)
 1. Install Postgres 18 (latest) and ensure `psql` is available.
 2. Create DB/user (example):
    - `createuser -P task_risk`
    - `createdb -O task_risk task_risk`
 3. `cp .env.example .env` and set `DATABASE_URL` or `POSTGRES_*`, plus `ONET_DATA_VERSION`/`DEFAULT_DATA_VERSION`.
-4. `./scripts/apply_schema.sh`
-5. `python -m batch.import_onet --data-version 30.1`
-6. `python -m batch.set_active_version --data-version 30.1`
-7. `python -m batch.update_soc_codes --data-version 30.1`
-8. `python -m batch.build_task_catalog --size 200 --data-version 30.1`
-9. `python -m batch.build_task_weights --data-version 30.1`
-10. `python -m worker.score_tasks --limit 20 --data-version 30.1`
-11. `python -m worker.aggregate_occupations --data-version 30.1`
-12. `uvicorn api.main:app --reload`
+4. `python3 -m venv .venv && ./.venv/bin/pip install -r requirements.txt`
+5. `./scripts/apply_schema.sh`
+6. `./.venv/bin/python -m batch.import_onet --data-version 30.1`
+7. `./.venv/bin/python -m batch.set_active_version --data-version 30.1`
+8. `./.venv/bin/python -m batch.update_soc_codes --data-version 30.1`
+9. `./.venv/bin/python -m batch.build_task_catalog --size 200 --data-version 30.1`
+10. `./.venv/bin/python -m batch.build_task_weights --data-version 30.1`
+11. `./.venv/bin/python -m worker.score_tasks --limit 20 --data-version 30.1`
+12. `./.venv/bin/python -m worker.aggregate_occupations --data-version 30.1`
+13. `./.venv/bin/uvicorn api.main:app --reload`
 
 Notes:
 - ETL uses truncate+reload for idempotent re-runs.

@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS occupation_task_ratings (
   onetsoc_code VARCHAR(10) NOT NULL,
   task_id BIGINT NOT NULL,
   scale_id VARCHAR(3) NOT NULL,
-  category INTEGER,
+  category INTEGER NOT NULL DEFAULT 0,
   data_value NUMERIC(6,2),
   n INTEGER,
   standard_error NUMERIC(7,4),
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS occupation_task_ratings (
   recommend_suppress VARCHAR(1),
   date_updated DATE,
   domain_source VARCHAR(30),
-  PRIMARY KEY (data_version, onetsoc_code, task_id, scale_id),
+  PRIMARY KEY (data_version, onetsoc_code, task_id, scale_id, category),
   FOREIGN KEY (data_version, onetsoc_code)
     REFERENCES occupation_master (data_version, onetsoc_code)
     ON DELETE CASCADE,

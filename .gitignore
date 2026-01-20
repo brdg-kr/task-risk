@@ -24,5 +24,8 @@ venv/
 # Local outputs
 worker/output/
 
+# Licensed datasets
+Data/db_*_*_mysql/
+
 # Node cache
 .npm-cache/

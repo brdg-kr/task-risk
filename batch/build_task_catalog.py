@@ -30,17 +30,17 @@ def main():
                 """
                 INSERT INTO task_catalog (data_version, task_id, score, source_scale_id)
                 SELECT
-                    %(data_version)s,
+                    %(data_version)s::text,
                     task_id,
                     AVG(data_value) AS score,
-                    %(scale_id)s
+                    %(scale_id)s::varchar
                 FROM occupation_task_ratings
-                WHERE data_version = %(data_version)s
-                  AND scale_id = %(scale_id)s
+                WHERE data_version = %(data_version)s::text
+                  AND scale_id = %(scale_id)s::varchar
                   AND data_value IS NOT NULL
                 GROUP BY task_id
                 ORDER BY AVG(data_value) DESC NULLS LAST
-                LIMIT %(limit)s
+                LIMIT %(limit)s::int
                 """,
                 {"data_version": args.data_version, "scale_id": args.scale_id, "limit": args.size},
             )

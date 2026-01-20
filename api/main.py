@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from psycopg.rows import dict_row
@@ -8,7 +9,7 @@ from api.db import get_conn
 app = FastAPI(title="task-risk")
 
 
-def resolve_data_version(conn, requested: str | None) -> str:
+def resolve_data_version(conn, requested: Optional[str]) -> str:
     if requested:
         return requested
     env_version = os.getenv("DEFAULT_DATA_VERSION")
@@ -37,11 +38,11 @@ def health():
 
 @app.get("/occupations")
 def list_occupations(
-    search: str | None = Query(default=None),
+    search: Optional[str] = Query(default=None),
     sort: str = Query(default="ai"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
-    data_version: str | None = Query(default=None),
+    data_version: Optional[str] = Query(default=None),
 ):
     params = {}
 
@@ -49,7 +50,7 @@ def list_occupations(
         conn.row_factory = dict_row
         data_version = resolve_data_version(conn, data_version)
 
-        where_clauses = ["om.onetsoc_code LIKE '%.00'", "om.data_version = %(data_version)s"]
+        where_clauses = ["om.onetsoc_code LIKE '%%.00'", "om.data_version = %(data_version)s"]
         params["data_version"] = data_version
 
         if search:
@@ -114,7 +115,7 @@ def list_occupations(
 
 
 @app.get("/occupations/{soc_code}")
-def get_occupation(soc_code: str, data_version: str | None = Query(default=None)):
+def get_occupation(soc_code: str, data_version: Optional[str] = Query(default=None)):
     with get_conn() as conn:
         conn.row_factory = dict_row
         data_version = resolve_data_version(conn, data_version)
@@ -191,7 +192,7 @@ def get_occupation(soc_code: str, data_version: str | None = Query(default=None)
 @app.get("/rankings/ai_risk")
 def ai_risk_rankings(
     limit: int = Query(default=50, ge=1, le=200),
-    data_version: str | None = Query(default=None),
+    data_version: Optional[str] = Query(default=None),
 ):
     with get_conn() as conn:
         conn.row_factory = dict_row
@@ -209,7 +210,7 @@ def ai_risk_rankings(
                   ON oai.data_version = om.data_version
                  AND oai.soc_code = om.soc_code
                 WHERE om.data_version = %(data_version)s
-                  AND om.onetsoc_code LIKE '%.00'
+                  AND om.onetsoc_code LIKE '%%.00'
                 ORDER BY oai.mean DESC NULLS LAST
                 LIMIT %(limit)s
                 """,

@@ -43,12 +43,15 @@ def iter_task_rating_rows(file_path: str, data_version: str) -> Iterable[Tuple]:
     for row in iter_insert_rows(file_path, "task_ratings"):
         task_id_raw = row.get("task_id")
         task_id = int(float(task_id_raw)) if task_id_raw is not None else None
+        category = _to_int(row.get("category"))
+        if category is None:
+            category = 0
         yield (
             data_version,
             row.get("onetsoc_code"),
             task_id,
             row.get("scale_id"),
-            _to_int(row.get("category")),
+            category,
             _to_float(row.get("data_value")),
             _to_int(row.get("n")),
             _to_float(row.get("standard_error")),
@@ -117,31 +120,22 @@ def main():
                 (data_version, False),
             )
             if args.mode == "truncate":
-                cur.execute(
-                    """
-                    DELETE FROM occupation_ai_score WHERE data_version = %s;
-                    DELETE FROM task_ai_ensemble WHERE data_version = %s;
-                    DELETE FROM task_ai_score WHERE data_version = %s;
-                    DELETE FROM occupation_task_ratings WHERE data_version = %s;
-                    DELETE FROM alternate_titles WHERE data_version = %s;
-                    DELETE FROM task_catalog WHERE data_version = %s;
-                    DELETE FROM occupation_task_weight WHERE data_version = %s;
-                    DELETE FROM task_statements WHERE data_version = %s;
-                    DELETE FROM occupation_master WHERE data_version = %s;
-                    """
-                    ,
-                    (
-                        data_version,
-                        data_version,
-                        data_version,
-                        data_version,
-                        data_version,
-                        data_version,
-                        data_version,
-                        data_version,
-                        data_version,
-                    ),
-                )
+                delete_tables = [
+                    "occupation_ai_score",
+                    "task_ai_ensemble",
+                    "task_ai_score",
+                    "occupation_task_ratings",
+                    "alternate_titles",
+                    "task_catalog",
+                    "occupation_task_weight",
+                    "task_statements",
+                    "occupation_master",
+                ]
+                for table in delete_tables:
+                    cur.execute(
+                        f"DELETE FROM {table} WHERE data_version = %s",
+                        (data_version,),
+                    )
         conn.commit()
 
         copy_rows(
