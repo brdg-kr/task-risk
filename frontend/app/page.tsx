@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   API_BASE,
   fetchOccupationDetail,
@@ -11,6 +11,7 @@ import {
   type OccupationItem,
   type RankingItem,
 } from "@/lib/api";
+import { AppNav } from "@/components/app-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,6 +69,7 @@ export default function Home() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [loadingRank, setLoadingRank] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const detailRequestId = useRef(0);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -78,7 +80,7 @@ export default function Home() {
   }, [searchInput]);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
     setLoadingList(true);
     setError(null);
     fetchOccupations({
@@ -87,43 +89,60 @@ export default function Home() {
       page,
       pageSize,
       dataVersion,
-      signal: controller.signal,
     })
       .then((data) => {
+        if (cancelled) return;
         setItems(data.items);
         setTotal(data.total);
       })
       .catch((err) => {
-        if (err.name !== "AbortError") {
-          setError(err.message ?? "Failed to load data.");
-        }
+        if (cancelled) return;
+        setError(err.message ?? "Failed to load data.");
       })
-      .finally(() => setLoadingList(false));
-    return () => controller.abort();
+      .finally(() => {
+        if (!cancelled) setLoadingList(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [search, sort, page, pageSize, dataVersion]);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
     setLoadingRank(true);
-    fetchRankings({ limit: 12, dataVersion, signal: controller.signal })
-      .then((data) => setRanking(data.items))
+    fetchRankings({ limit: 12, dataVersion })
+      .then((data) => {
+        if (!cancelled) setRanking(data.items);
+      })
       .catch(() => {})
-      .finally(() => setLoadingRank(false));
-    return () => controller.abort();
+      .finally(() => {
+        if (!cancelled) setLoadingRank(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [dataVersion]);
 
   const loadDetail = (socCode: string) => {
-    const controller = new AbortController();
+    const requestId = detailRequestId.current + 1;
+    detailRequestId.current = requestId;
     setLoadingDetail(true);
-    fetchOccupationDetail(socCode, dataVersion, controller.signal)
-      .then((data) => setSelected(data))
+    fetchOccupationDetail(socCode, dataVersion)
+      .then((data) => {
+        if (detailRequestId.current === requestId) {
+          setSelected(data);
+        }
+      })
       .catch((err) => {
-        if (err.name !== "AbortError") {
+        if (detailRequestId.current === requestId) {
           setError(err.message ?? "Failed to load detail.");
         }
       })
-      .finally(() => setLoadingDetail(false));
-    return () => controller.abort();
+      .finally(() => {
+        if (detailRequestId.current === requestId) {
+          setLoadingDetail(false);
+        }
+      });
   };
 
   const pages = Math.max(1, Math.ceil(total / pageSize));
@@ -143,16 +162,16 @@ export default function Home() {
   }, [ranking]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#fff6e6_0%,_#f4ede1_55%,_#efe2d5_100%)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(244,96,54,0.18),transparent_50%),radial-gradient(circle_at_85%_0%,rgba(31,122,140,0.18),transparent_45%),radial-gradient(circle_at_50%_90%,rgba(249,199,79,0.18),transparent_45%)]" />
-      <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-10 px-6 py-12">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-10">
+        <AppNav />
         <header className="flex flex-col gap-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <Badge className="rounded-full px-3 py-1 text-xs uppercase tracking-[0.3em]">
                 Live Risk Signals
               </Badge>
-              <h1 className="mt-4 text-4xl font-[var(--font-display)] text-foreground sm:text-5xl">
+              <h1 className="mt-4 text-3xl font-semibold text-foreground sm:text-4xl">
                 직업·업무 자동화 위험도
               </h1>
               <p className="mt-3 max-w-2xl text-base text-muted-foreground">
@@ -160,12 +179,12 @@ export default function Home() {
                 랭킹과 상세 업무 구성을 빠르게 확인합니다.
               </p>
             </div>
-            <div className="rounded-2xl border border-border bg-card/70 px-4 py-3 text-xs text-muted-foreground shadow-sm backdrop-blur">
+            <div className="rounded-md border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
               API Base: {API_BASE}
             </div>
           </div>
 
-          <Card className="border-border/70 bg-card/80 shadow-sm">
+          <Card className="border-border bg-card">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg">탐색 필터</CardTitle>
               <CardDescription>
@@ -239,7 +258,7 @@ export default function Home() {
         </header>
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-          <Card className="border-border/70 bg-card/80 shadow-sm">
+          <Card className="border-border bg-card">
             <CardHeader className="pb-4">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -277,7 +296,7 @@ export default function Home() {
                     items.map((item) => (
                       <button
                         key={`${item.soc_code}-${item.onetsoc_code}`}
-                        className="w-full rounded-2xl border border-border/70 bg-background/70 px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-md"
+                        className="w-full rounded-lg border border-border bg-background px-4 py-3 text-left transition hover:bg-muted"
                         onClick={() => loadDetail(item.soc_code)}
                       >
                         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -331,7 +350,7 @@ export default function Home() {
                         : items.map((item) => (
                             <TableRow
                               key={`${item.soc_code}-${item.onetsoc_code}`}
-                              className="cursor-pointer hover:bg-secondary/60"
+                              className="cursor-pointer hover:bg-muted"
                               onClick={() => loadDetail(item.soc_code)}
                             >
                               <TableCell className="font-medium">
@@ -373,7 +392,7 @@ export default function Home() {
           </Card>
 
           <div className="flex flex-col gap-6">
-            <Card className="border-border/70 bg-card/80 shadow-sm">
+            <Card className="border-border bg-card">
               <CardHeader>
                 <CardTitle>직업 상세</CardTitle>
                 <CardDescription>선택한 직업의 업무 구성</CardDescription>
@@ -436,7 +455,7 @@ export default function Home() {
                         {selected.top_tasks.slice(0, 8).map((task) => (
                           <div
                             key={task.task_id}
-                            className="rounded-2xl border border-border/70 bg-background/70 px-4 py-3"
+                            className="rounded-lg border border-border bg-background px-4 py-3"
                           >
                             <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                               <span>가중치 {task.weight.toFixed(3)}</span>
@@ -454,7 +473,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/70 bg-card/80 shadow-sm">
+            <Card className="border-border bg-card">
               <CardHeader>
                 <CardTitle>위험도 리포트</CardTitle>
                 <CardDescription>상위 위험 직업 스냅샷</CardDescription>
@@ -469,7 +488,7 @@ export default function Home() {
                 ) : (
                   <>
                     {riskSnapshot && (
-                      <div className="rounded-2xl border border-border/70 bg-secondary/70 px-4 py-3">
+                      <div className="rounded-lg border border-border bg-secondary px-4 py-3">
                         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                           평균 위험도 (Top 12)
                         </p>

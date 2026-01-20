@@ -192,12 +192,21 @@ LIMIT 5;
 
 Files
 - `worker/score_tasks.py`
+- `worker/build_llm_task_cards.py`
 - `worker/aggregate_occupations.py`
 - `api/main.py`
 
 LLM 설정 (실서비스 모드)
 - `.env`에서 `USE_MOCK_LLM=0` 설정
 - `LLM_PROVIDERS_ENABLED=openai,anthropic` (필요 시 `local` 추가)
+
+주간 스코어링 (active scope 기준)
+- `python -m worker.build_llm_task_cards --data-version 30.1`
+- `python -m worker.score_tasks --limit 200 --data-version 30.1`
+- `python -m worker.aggregate_occupations --data-version 30.1`
+
+Migration (기존 DB)
+- `psql "$DATABASE_URL" -f scripts/migrate_weekly_scores.sql`
 - 기본 모델
   - `LLM_OPENAI_MODEL=gpt-5-nano`
   - `LLM_ANTHROPIC_MODEL=claude-haiku-4-5`

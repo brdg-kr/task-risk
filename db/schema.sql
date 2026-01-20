@@ -99,6 +99,7 @@ CREATE INDEX IF NOT EXISTS idx_occupation_task_weight_soc
 CREATE TABLE IF NOT EXISTS model_run (
   id BIGSERIAL PRIMARY KEY,
   data_version TEXT NOT NULL REFERENCES data_version(id) ON DELETE CASCADE,
+  week VARCHAR(8) NOT NULL,
   model TEXT NOT NULL,
   prompt_version TEXT,
   model_version TEXT,
@@ -112,6 +113,7 @@ CREATE TABLE IF NOT EXISTS model_run (
 CREATE TABLE IF NOT EXISTS task_ai_score (
   id BIGSERIAL PRIMARY KEY,
   data_version TEXT NOT NULL,
+  week VARCHAR(8) NOT NULL,
   task_id BIGINT NOT NULL,
   model TEXT NOT NULL,
   score NUMERIC(6,2),
@@ -126,20 +128,21 @@ CREATE TABLE IF NOT EXISTS task_ai_score (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_task_ai_score_cache
-  ON task_ai_score (data_version, task_id, model, prompt_hash, input_hash);
+  ON task_ai_score (data_version, week, task_id, model, prompt_hash, input_hash);
 
 CREATE INDEX IF NOT EXISTS idx_task_ai_score_task
-  ON task_ai_score (data_version, task_id);
+  ON task_ai_score (data_version, week, task_id);
 
 CREATE TABLE IF NOT EXISTS task_ai_ensemble (
   data_version TEXT NOT NULL,
+  week VARCHAR(8) NOT NULL,
   task_id BIGINT NOT NULL,
   mean NUMERIC(6,2),
   std NUMERIC(6,2),
   min NUMERIC(6,2),
   max NUMERIC(6,2),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  PRIMARY KEY (data_version, task_id),
+  PRIMARY KEY (data_version, week, task_id),
   FOREIGN KEY (data_version, task_id)
     REFERENCES task_statements (data_version, task_id)
     ON DELETE CASCADE
@@ -147,16 +150,17 @@ CREATE TABLE IF NOT EXISTS task_ai_ensemble (
 
 CREATE TABLE IF NOT EXISTS occupation_ai_score (
   data_version TEXT NOT NULL,
+  week VARCHAR(8) NOT NULL,
   soc_code VARCHAR(7) NOT NULL,
   mean NUMERIC(6,2),
   std NUMERIC(6,2),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  PRIMARY KEY (data_version, soc_code),
+  PRIMARY KEY (data_version, week, soc_code),
   FOREIGN KEY (data_version) REFERENCES data_version(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_occupation_ai_score_mean
-  ON occupation_ai_score (data_version, mean DESC);
+  ON occupation_ai_score (data_version, week, mean DESC);
 
 CREATE TABLE IF NOT EXISTS bls_oews_metrics (
   soc_code VARCHAR(7) NOT NULL,
@@ -173,6 +177,134 @@ CREATE TABLE IF NOT EXISTS bls_proj_metrics (
   growth_pct NUMERIC(6,2),
   annual_openings INTEGER,
   PRIMARY KEY (soc_code, projection_period)
+);
+
+-- Tech progress tracking (AI development -> task link -> weekly snapshot)
+CREATE TABLE IF NOT EXISTS tech_progress_technology (
+  tech_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  domain TEXT,
+  synonyms_json JSONB,
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CHECK (status IN ('active', 'inactive'))
+);
+
+CREATE TABLE IF NOT EXISTS tech_progress_evidence_source (
+  source_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  source_type TEXT NOT NULL,
+  base_url TEXT,
+  trust_score NUMERIC(4,2),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CHECK (trust_score IS NULL OR (trust_score >= 0 AND trust_score <= 1))
+);
+
+CREATE TABLE IF NOT EXISTS tech_progress_evidence (
+  evidence_id TEXT PRIMARY KEY,
+  source_id TEXT NOT NULL REFERENCES tech_progress_evidence_source(source_id) ON DELETE CASCADE,
+  evidence_date DATE NOT NULL,
+  summary TEXT NOT NULL,
+  quality_score NUMERIC(4,2) NOT NULL,
+  raw_ref TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CHECK (quality_score >= 0 AND quality_score <= 1)
+);
+
+CREATE TABLE IF NOT EXISTS tech_progress_scope_active (
+  active_id TEXT PRIMARY KEY,
+  week VARCHAR(8) NOT NULL,
+  data_version TEXT NOT NULL REFERENCES data_version(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'draft',
+  created_by TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CHECK (status IN ('draft', 'active', 'archived'))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_tech_progress_scope_active_week
+  ON tech_progress_scope_active (data_version, week)
+  WHERE status = 'active';
+
+CREATE TABLE IF NOT EXISTS tech_progress_scope_active_task (
+  active_id TEXT NOT NULL REFERENCES tech_progress_scope_active(active_id) ON DELETE CASCADE,
+  week VARCHAR(8) NOT NULL,
+  data_version TEXT NOT NULL,
+  task_id BIGINT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (active_id, task_id),
+  FOREIGN KEY (data_version, task_id)
+    REFERENCES task_statements (data_version, task_id)
+    ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_tech_progress_scope_active_task_week
+  ON tech_progress_scope_active_task (data_version, week);
+
+CREATE TABLE IF NOT EXISTS tech_progress_task_link (
+  id BIGSERIAL PRIMARY KEY,
+  week VARCHAR(8) NOT NULL,
+  data_version TEXT NOT NULL REFERENCES data_version(id) ON DELETE CASCADE,
+  task_id BIGINT NOT NULL,
+  tech_id TEXT NOT NULL REFERENCES tech_progress_technology(tech_id) ON DELETE CASCADE,
+  link_type TEXT NOT NULL,
+  impact_score NUMERIC(4,2) NOT NULL,
+  confidence NUMERIC(4,2) NOT NULL,
+  evidence_id TEXT NOT NULL REFERENCES tech_progress_evidence(evidence_id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  FOREIGN KEY (data_version, task_id)
+    REFERENCES task_statements (data_version, task_id)
+    ON DELETE CASCADE,
+  CHECK (link_type IN ('enables', 'augments', 'automates', 'replaces', 'requires')),
+  CHECK (impact_score >= 0 AND impact_score <= 1),
+  CHECK (confidence >= 0 AND confidence <= 1)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_tech_progress_task_link_dedupe
+  ON tech_progress_task_link (data_version, week, task_id, tech_id, link_type, evidence_id);
+
+CREATE INDEX IF NOT EXISTS idx_tech_progress_task_link_week
+  ON tech_progress_task_link (data_version, week);
+
+CREATE TABLE IF NOT EXISTS tech_progress_weekly_snapshot (
+  week VARCHAR(8) NOT NULL,
+  data_version TEXT NOT NULL REFERENCES data_version(id) ON DELETE CASCADE,
+  task_id BIGINT NOT NULL,
+  progress_score NUMERIC(4,2) NOT NULL,
+  delta NUMERIC(4,2) NOT NULL,
+  top_changes_json JSONB,
+  evidence_ids_json JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (data_version, week, task_id),
+  FOREIGN KEY (data_version, task_id)
+    REFERENCES task_statements (data_version, task_id)
+    ON DELETE CASCADE,
+  CHECK (progress_score >= 0 AND progress_score <= 1),
+  CHECK (delta >= -1 AND delta <= 1)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tech_progress_weekly_snapshot_week
+  ON tech_progress_weekly_snapshot (data_version, week);
+
+CREATE TABLE IF NOT EXISTS tech_progress_llm_task_card (
+  data_version TEXT NOT NULL REFERENCES data_version(id) ON DELETE CASCADE,
+  week VARCHAR(8) NOT NULL,
+  task_id BIGINT NOT NULL,
+  version INTEGER NOT NULL DEFAULT 1,
+  payload_json JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (data_version, week, task_id, version),
+  FOREIGN KEY (data_version, task_id)
+    REFERENCES task_statements (data_version, task_id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tech_progress_llm_weekly_summary (
+  data_version TEXT NOT NULL REFERENCES data_version(id) ON DELETE CASCADE,
+  week VARCHAR(8) NOT NULL,
+  version INTEGER NOT NULL DEFAULT 1,
+  payload_json JSONB NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (data_version, week, version)
 );
 
 COMMIT;
