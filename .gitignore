@@ -34,3 +34,5 @@ Data/db_*_*_mysql/
 node_modules/
 frontend/.next/
 frontend/out/
+
+db/backups/
