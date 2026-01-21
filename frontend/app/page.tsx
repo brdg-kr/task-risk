@@ -172,11 +172,11 @@ export default function Home() {
                 Live Risk Signals
               </Badge>
               <h1 className="mt-4 text-3xl font-semibold text-foreground sm:text-4xl">
-                직업·업무 자동화 위험도
+                Occupation & Task Automation Risk
               </h1>
               <p className="mt-3 max-w-2xl text-base text-muted-foreground">
-                O*NET 업무 단위를 기반으로 모델별 위험도 점수를 집계하고, 직업
-                랭킹과 상세 업무 구성을 빠르게 확인합니다.
+                Aggregate model risk scores for O*NET tasks and quickly explore
+                occupation rankings and task breakdowns.
               </p>
             </div>
             <div className="rounded-md border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
@@ -186,9 +186,9 @@ export default function Home() {
 
           <Card className="border-border bg-card">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg">탐색 필터</CardTitle>
+              <CardTitle className="text-lg">Explore Filters</CardTitle>
               <CardDescription>
-                검색/정렬/버전/페이지 크기를 조정합니다.
+                Adjust search, sorting, data version, and page size.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-4">
@@ -197,7 +197,7 @@ export default function Home() {
                   Search
                 </p>
                 <Input
-                  placeholder="직업명 또는 SOC 코드"
+                  placeholder="Occupation name or SOC code"
                   value={searchInput}
                   onChange={(event) => setSearchInput(event.target.value)}
                 />
@@ -213,11 +213,11 @@ export default function Home() {
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="정렬" />
+                    <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ai">AI 위험도</SelectItem>
-                    <SelectItem value="employment">고용 규모</SelectItem>
+                    <SelectItem value="ai">AI risk</SelectItem>
+                    <SelectItem value="employment">Employment</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -242,12 +242,12 @@ export default function Home() {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="페이지 크기" />
+                    <SelectValue placeholder="Page size" />
                   </SelectTrigger>
                   <SelectContent>
                     {[10, 20, 50].map((size) => (
                       <SelectItem key={size} value={String(size)}>
-                        {size}개
+                        {size} items
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -262,13 +262,13 @@ export default function Home() {
             <CardHeader className="pb-4">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <CardTitle>직업 목록</CardTitle>
+                  <CardTitle>Occupation List</CardTitle>
                   <CardDescription>
-                    총 {numberFormatter.format(total)}개 직업
+                    Total {numberFormatter.format(total)} occupations
                   </CardDescription>
                 </div>
                 <Badge variant="outline">
-                  {loadingList ? "로딩 중" : `${page} / ${pages} 페이지`}
+                  {loadingList ? "Loading" : `${page} / ${pages} pages`}
                 </Badge>
               </div>
             </CardHeader>
@@ -281,8 +281,8 @@ export default function Home() {
 
               <Tabs defaultValue="cards" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="cards">카드</TabsTrigger>
-                  <TabsTrigger value="table">테이블</TabsTrigger>
+                  <TabsTrigger value="cards">Cards</TabsTrigger>
+                  <TabsTrigger value="table">Table</TabsTrigger>
                 </TabsList>
                 <TabsContent value="cards" className="space-y-3">
                   {loadingList && (
@@ -313,7 +313,7 @@ export default function Home() {
                               AI {formatScore(item.ai_mean)}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
-                              고용 {formatNumber(item.employment)}
+                              Employment {formatNumber(item.employment)}
                             </span>
                           </div>
                         </div>
@@ -332,10 +332,10 @@ export default function Home() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>직업</TableHead>
+                        <TableHead>Occupation</TableHead>
                         <TableHead>SOC</TableHead>
                         <TableHead className="text-right">AI</TableHead>
-                        <TableHead className="text-right">고용</TableHead>
+                        <TableHead className="text-right">Employment</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -378,14 +378,14 @@ export default function Home() {
                   onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                   disabled={page === 1 || loadingList}
                 >
-                  이전
+                  Previous
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setPage((prev) => Math.min(pages, prev + 1))}
                   disabled={page >= pages || loadingList}
                 >
-                  다음
+                  Next
                 </Button>
               </div>
             </CardContent>
@@ -394,8 +394,10 @@ export default function Home() {
           <div className="flex flex-col gap-6">
             <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle>직업 상세</CardTitle>
-                <CardDescription>선택한 직업의 업무 구성</CardDescription>
+                <CardTitle>Occupation Detail</CardTitle>
+                <CardDescription>
+                  Task breakdown for the selected occupation
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {loadingDetail && (
@@ -407,7 +409,7 @@ export default function Home() {
                 )}
                 {!selected && !loadingDetail && (
                   <p className="text-sm text-muted-foreground">
-                    왼쪽 목록에서 직업을 선택하세요.
+                    Select an occupation from the list on the left.
                   </p>
                 )}
                 {selected && (
@@ -427,10 +429,10 @@ export default function Home() {
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       <Badge className="bg-primary text-primary-foreground">
-                        AI 평균 {formatScore(selected.ai_score?.mean ?? null)}
+                        AI mean {formatScore(selected.ai_score?.mean ?? null)}
                       </Badge>
                       <Badge variant="secondary">
-                        표준편차 {formatScore(selected.ai_score?.std ?? null)}
+                        Std dev {formatScore(selected.ai_score?.std ?? null)}
                       </Badge>
                     </div>
                     {selected.alternate_titles.length > 0 && (
@@ -449,7 +451,7 @@ export default function Home() {
                     )}
                     <div>
                       <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                        핵심 업무 TOP 8
+                        Top 8 Core Tasks
                       </p>
                       <div className="mt-3 space-y-3">
                         {selected.top_tasks.slice(0, 8).map((task) => (
@@ -458,7 +460,7 @@ export default function Home() {
                             className="rounded-lg border border-border bg-background px-4 py-3"
                           >
                             <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                              <span>가중치 {task.weight.toFixed(3)}</span>
+                              <span>Weight {task.weight.toFixed(3)}</span>
                               <span>#{task.task_id}</span>
                             </div>
                             <p className="mt-2 text-sm text-foreground">
@@ -475,8 +477,8 @@ export default function Home() {
 
             <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle>위험도 리포트</CardTitle>
-                <CardDescription>상위 위험 직업 스냅샷</CardDescription>
+                <CardTitle>Risk Report</CardTitle>
+                <CardDescription>Snapshot of high-risk occupations</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {loadingRank ? (
@@ -490,7 +492,7 @@ export default function Home() {
                     {riskSnapshot && (
                       <div className="rounded-lg border border-border bg-secondary px-4 py-3">
                         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                          평균 위험도 (Top 12)
+                          Average Risk (Top 12)
                         </p>
                         <div className="mt-2 flex items-center justify-between">
                           <span className="text-3xl font-semibold text-foreground">
@@ -505,12 +507,12 @@ export default function Home() {
                       </div>
                     )}
                     <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>직업</TableHead>
+                    <TableHeader>
+                      <TableRow>
+                          <TableHead>Occupation</TableHead>
                           <TableHead className="text-right">AI</TableHead>
-                        </TableRow>
-                      </TableHeader>
+                      </TableRow>
+                    </TableHeader>
                       <TableBody>
                         {ranking.map((item) => (
                           <TableRow key={item.soc_code}>

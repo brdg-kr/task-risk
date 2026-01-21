@@ -219,11 +219,11 @@ export default function TechProgressPage() {
                 Weekly Tech Signals
               </Badge>
               <h1 className="mt-4 text-3xl font-semibold text-foreground sm:text-4xl">
-                AI 기술 발전 조회
+                AI Tech Progress
               </h1>
               <p className="mt-3 max-w-2xl text-base text-muted-foreground">
-                주차별 AI 기술 발전 내용을 업무(task) 단위로 연결해 변화량을
-                확인합니다. Active scope에 포함된 업무만 집계합니다.
+                Review weekly AI tech progress linked to tasks and track deltas.
+                Only tasks in the active scope are aggregated.
               </p>
             </div>
             <div className="rounded-md border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
@@ -233,9 +233,9 @@ export default function TechProgressPage() {
 
           <Card className="border-border bg-card">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg">필터</CardTitle>
+              <CardTitle className="text-lg">Filters</CardTitle>
               <CardDescription>
-                주차와 데이터 버전을 선택합니다.
+                Select week and data version.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
@@ -248,12 +248,12 @@ export default function TechProgressPage() {
                   onValueChange={(value) => setWeek(value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="주차 선택" />
+                    <SelectValue placeholder="Select week" />
                   </SelectTrigger>
                   <SelectContent>
                     {loadingWeeks && (
                       <SelectItem value="loading" disabled>
-                        로딩 중...
+                        Loading...
                       </SelectItem>
                     )}
                     {weeks.map((item) => (
@@ -285,12 +285,12 @@ export default function TechProgressPage() {
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="페이지 크기" />
+                    <SelectValue placeholder="Page size" />
                   </SelectTrigger>
                   <SelectContent>
                     {[10, 20, 50].map((size) => (
                       <SelectItem key={size} value={String(size)}>
-                        {size}개
+                        {size} items
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -302,10 +302,10 @@ export default function TechProgressPage() {
                 </p>
                 <Select value={linkType} onValueChange={setLinkType}>
                   <SelectTrigger>
-                    <SelectValue placeholder="연결 타입" />
+                    <SelectValue placeholder="Link type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">전체</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
                     <SelectItem value="automates">automates</SelectItem>
                     <SelectItem value="augments">augments</SelectItem>
                     <SelectItem value="enables">enables</SelectItem>
@@ -318,14 +318,14 @@ export default function TechProgressPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
                   Min Delta
                 </p>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  placeholder="예: 0.05"
-                  value={minDeltaInput}
-                  onChange={(event) => setMinDeltaInput(event.target.value)}
-                />
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    placeholder="e.g. 0.05"
+                    value={minDeltaInput}
+                    onChange={(event) => setMinDeltaInput(event.target.value)}
+                  />
               </div>
             </CardContent>
           </Card>
@@ -336,13 +336,13 @@ export default function TechProgressPage() {
             <CardHeader className="pb-4">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <CardTitle>업무 변화 목록</CardTitle>
+                  <CardTitle>Task Change List</CardTitle>
                   <CardDescription>
-                    총 {formatNumber(total)}개 업무
+                    Total {formatNumber(total)} tasks
                   </CardDescription>
                 </div>
                 <Badge variant="outline">
-                  {loadingList ? "로딩 중" : `${page} / ${pages} 페이지`}
+                  {loadingList ? "Loading" : `${page} / ${pages} pages`}
                 </Badge>
               </div>
             </CardHeader>
@@ -355,11 +355,11 @@ export default function TechProgressPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>업무</TableHead>
-                    <TableHead className="text-right">진척도</TableHead>
-                    <TableHead className="text-right">주간 변화</TableHead>
-                    <TableHead>대표 기술</TableHead>
-                    <TableHead className="text-right">연결 수</TableHead>
+                    <TableHead>Task</TableHead>
+                    <TableHead className="text-right">Progress</TableHead>
+                    <TableHead className="text-right">Weekly Change</TableHead>
+                    <TableHead>Top Tech</TableHead>
+                    <TableHead className="text-right">Links</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -409,14 +409,14 @@ export default function TechProgressPage() {
                   onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                   disabled={page === 1 || loadingList}
                 >
-                  이전
+                  Previous
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setPage((prev) => Math.min(pages, prev + 1))}
                   disabled={page >= pages || loadingList}
                 >
-                  다음
+                  Next
                 </Button>
               </div>
             </CardContent>
@@ -425,9 +425,9 @@ export default function TechProgressPage() {
           <div className="flex flex-col gap-6">
             <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle>주간 요약</CardTitle>
+                <CardTitle>Weekly Summary</CardTitle>
                 <CardDescription>
-                  활성 범위에서 집계한 변화 지표
+                  Change metrics aggregated from the active scope
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -441,25 +441,26 @@ export default function TechProgressPage() {
                     <div className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
                       Active Scope{" "}
                       <span className="text-foreground">
-                        {summary.active_scope_id ?? "없음"}
+                        {summary.active_scope_id ?? "None"}
                       </span>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       <Badge className="bg-primary text-primary-foreground">
-                        변화 업무 {formatNumber(activeSummary?.tasksWithChange)}
+                        Tasks with change{" "}
+                        {formatNumber(activeSummary?.tasksWithChange)}
                       </Badge>
                       <Badge variant="secondary">
-                        평균 진척 {formatScore(activeSummary?.avgProgress)}
+                        Avg progress {formatScore(activeSummary?.avgProgress)}
                       </Badge>
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                        Top 변화 업무
+                        Top Changed Tasks
                       </p>
                       <div className="mt-3 space-y-2">
                         {summary.top_tasks.length === 0 && (
                           <p className="text-sm text-muted-foreground">
-                            표시할 변화 업무가 없습니다.
+                            No changed tasks to display.
                           </p>
                         )}
                         {summary.top_tasks.map((task) => (
@@ -480,12 +481,12 @@ export default function TechProgressPage() {
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                        Top 기술
+                        Top Technologies
                       </p>
                       <div className="mt-3 space-y-2">
                         {summary.top_tech.length === 0 && (
                           <p className="text-sm text-muted-foreground">
-                            연결된 기술이 없습니다.
+                            No linked technologies.
                           </p>
                         )}
                         {summary.top_tech.map((tech) => (
@@ -504,7 +505,7 @@ export default function TechProgressPage() {
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    주간 데이터를 선택하세요.
+                    Select a week to view data.
                   </p>
                 )}
               </CardContent>
@@ -512,8 +513,10 @@ export default function TechProgressPage() {
 
             <Card className="border-border bg-card">
               <CardHeader>
-                <CardTitle>업무 상세</CardTitle>
-                <CardDescription>선택한 업무의 연결 정보</CardDescription>
+                <CardTitle>Task Detail</CardTitle>
+                <CardDescription>
+                  Links and evidence for the selected task
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {loadingDetail && (
@@ -525,7 +528,7 @@ export default function TechProgressPage() {
                 )}
                 {!selectedTask && !loadingDetail && (
                   <p className="text-sm text-muted-foreground">
-                    왼쪽 목록에서 업무를 선택하세요.
+                    Select a task from the list on the left.
                   </p>
                 )}
                 {selectedTask && (
@@ -540,20 +543,20 @@ export default function TechProgressPage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       <Badge className="bg-primary text-primary-foreground">
-                        진척 {formatScore(selectedTask.task.progress_score)}
+                        Progress {formatScore(selectedTask.task.progress_score)}
                       </Badge>
                       <Badge variant="secondary">
-                        주간 변화 {formatScore(selectedTask.task.delta)}
+                        Weekly change {formatScore(selectedTask.task.delta)}
                       </Badge>
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                        연결된 기술
+                        Linked Technologies
                       </p>
                       <div className="mt-3 space-y-3">
                         {selectedTask.links.length === 0 && (
                           <p className="text-sm text-muted-foreground">
-                            연결된 기술이 없습니다.
+                            No linked technologies.
                           </p>
                         )}
                         {selectedTask.links.map((link) => (
@@ -574,12 +577,12 @@ export default function TechProgressPage() {
                     </div>
                     <div>
                       <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                        근거(Evidence)
+                        Evidence
                       </p>
                       <div className="mt-3 space-y-3">
                         {selectedTask.evidence.length === 0 && (
                           <p className="text-sm text-muted-foreground">
-                            연결된 근거가 없습니다.
+                            No linked evidence.
                           </p>
                         )}
                         {selectedTask.evidence.map((item) => (
