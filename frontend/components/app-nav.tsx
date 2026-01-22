@@ -15,14 +15,16 @@ export function AppNav() {
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-      <div className="flex items-center gap-3">
-        <span className="text-sm font-semibold text-foreground">
+    <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex items-baseline gap-3">
+        <span className="text-lg font-semibold tracking-tight text-foreground">
           Task Risk Atlas
         </span>
-        <span className="text-xs text-muted-foreground">Menu</span>
+        <span className="text-xs uppercase tracking-[0.4em] text-muted-foreground">
+          Decision Infra
+        </span>
       </div>
-      <nav className="flex flex-wrap items-center gap-2">
+      <nav className="flex flex-wrap items-center gap-2 rounded-full border border-border/70 bg-card/70 px-2 py-1 shadow-[var(--shadow)] backdrop-blur">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           return (

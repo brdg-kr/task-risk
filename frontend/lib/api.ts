@@ -23,6 +23,14 @@ export type OccupationDetail = {
   ai_score: {
     mean: number | null;
     std: number | null;
+    ai_augmentation_potential_mean: number | null;
+    ai_augmentation_potential_std: number | null;
+    human_context_dependency_mean: number | null;
+    human_context_dependency_std: number | null;
+    physical_world_dependency_mean: number | null;
+    physical_world_dependency_std: number | null;
+    confidence_mean: number | null;
+    confidence_std: number | null;
     updated_at: string | null;
   } | null;
 };

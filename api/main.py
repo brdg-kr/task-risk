@@ -241,7 +241,18 @@ def get_occupation(
 
             cur.execute(
                 """
-                SELECT mean, std, updated_at
+                SELECT
+                  mean,
+                  std,
+                  ai_augmentation_potential_mean,
+                  ai_augmentation_potential_std,
+                  human_context_dependency_mean,
+                  human_context_dependency_std,
+                  physical_world_dependency_mean,
+                  physical_world_dependency_std,
+                  confidence_mean,
+                  confidence_std,
+                  updated_at
                 FROM occupation_ai_score
                 WHERE data_version = %(data_version)s
                   AND soc_code = %(soc_code)s
