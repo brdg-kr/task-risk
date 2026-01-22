@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { label: "Occupation & Task Automation Risk", href: "/" },
-  { label: "AI Tech Progress", href: "/tech-progress" },
+  { label: "Occupation Risk", href: "/" },
+  { label: "Tech Progress", href: "/tech-progress" },
 ];
 
 export function AppNav() {
